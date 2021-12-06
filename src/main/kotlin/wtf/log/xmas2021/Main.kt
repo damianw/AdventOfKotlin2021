@@ -12,6 +12,7 @@ import wtf.log.xmas2021.day.day01.Day01
 import wtf.log.xmas2021.day.day02.Day02
 import wtf.log.xmas2021.day.day03.Day03
 import wtf.log.xmas2021.day.day04.Day04
+import wtf.log.xmas2021.day.day05.Day05
 import wtf.log.xmas2021.util.time.toPrettyFormat
 import java.io.File
 import java.time.Duration
@@ -23,6 +24,7 @@ private val DAYS = listOf<Day<*, *, *>?>(
     Day02,
     Day03,
     Day04,
+    Day05,
 )
 
 private object ProgramArguments {
