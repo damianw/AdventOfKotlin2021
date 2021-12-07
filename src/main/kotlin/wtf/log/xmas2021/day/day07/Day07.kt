@@ -15,18 +15,21 @@ object Day07 : Day<ImmutableSortedMultiset<Int>, Int, Int> {
     override fun part1(input: ImmutableSortedMultiset<Int>): Int {
         @Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // IDE confused by Guava's annotations
         val range = input.firstEntry()!!.element!!..input.lastEntry()!!.element!!
-        val fuelCosts = range.associateWith { position ->
+        return range.minOf { position ->
             input.sumOf { (it!! - position).absoluteValue }
         }
-        return fuelCosts.values.minOrNull()!!
     }
 
-    override fun part2(input: ImmutableSortedMultiset<Int>): Int? {
+    @OptIn(ExperimentalStdlibApi::class)
+    override fun part2(input: ImmutableSortedMultiset<Int>): Int {
         @Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // IDE confused by Guava's annotations
         val range = input.firstEntry()!!.element!!..input.lastEntry()!!.element!!
-        val fuelCosts = range.associateWith { position ->
-            input.sumOf { (0..(it!! - position).absoluteValue).sum() }
+        val sums = mutableMapOf(0 to 0)
+        val recursiveSum = DeepRecursiveFunction<Int, Int> { value ->
+            sums.getOrPut(value) { callRecursive(value - 1) + value }
         }
-        return fuelCosts.values.minOrNull()!!
+        return range.minOf { position ->
+            input.sumOf { recursiveSum((it!! - position).absoluteValue) }
+        }
     }
 }
