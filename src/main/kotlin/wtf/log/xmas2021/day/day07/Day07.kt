@@ -24,12 +24,11 @@ object Day07 : Day<ImmutableSortedMultiset<Int>, Int, Int> {
     override fun part2(input: ImmutableSortedMultiset<Int>): Int {
         @Suppress("UNNECESSARY_NOT_NULL_ASSERTION") // IDE confused by Guava's annotations
         val range = input.firstEntry()!!.element!!..input.lastEntry()!!.element!!
-        val sums = mutableMapOf(0 to 0)
-        val recursiveSum = DeepRecursiveFunction<Int, Int> { value ->
-            sums.getOrPut(value) { callRecursive(value - 1) + value }
-        }
         return range.minOf { position ->
-            input.sumOf { recursiveSum((it!! - position).absoluteValue) }
+            input.sumOf { value ->
+                val delta = ((value!! - position).absoluteValue)
+                delta * (delta + 1) / 2
+            }
         }
     }
 }
