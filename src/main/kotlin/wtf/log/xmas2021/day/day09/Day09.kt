@@ -2,19 +2,18 @@ package wtf.log.xmas2021.day.day09
 
 import wtf.log.xmas2021.Day
 import wtf.log.xmas2021.util.collect.Grid
+import wtf.log.xmas2021.util.collect.toGrid
 import java.io.BufferedReader
 
 object Day09 : Day<Grid<Int>, Int, Int> {
 
-    override fun parseInput(reader: BufferedReader): Grid<Int> {
-        val rows = reader
-            .lineSequence()
-            .map { line ->
-                line.map { it.digitToInt() }
-            }
-            .toList()
-        return Grid(rows)
-    }
+    override fun parseInput(reader: BufferedReader): Grid<Int> = reader
+        .lineSequence()
+        .map { line ->
+            line.map { it.digitToInt() }
+        }
+        .toList()
+        .toGrid()
 
     override fun part1(input: Grid<Int>): Int = findLowPoints(input).sumOf { it.value + 1 }
 
@@ -31,7 +30,7 @@ object Day09 : Day<Grid<Int>, Int, Int> {
                 if (point.value != 9) {
                     basin += point
                     if (point !in visited) {
-                        for (adjacent in input.getAdjacent(point.rowIndex, point.columnIndex)) {
+                        for (adjacent in input.getCardinallyAdjacent(point.coordinate)) {
                             if (adjacent !in lowPoints) {
                                 deque.addFirst(adjacent)
                             }
@@ -48,7 +47,8 @@ object Day09 : Day<Grid<Int>, Int, Int> {
 
     private fun findLowPoints(input: Grid<Int>): Set<Grid.Entry<Int>> {
         return input.filterTo(mutableSetOf()) { entry ->
-            input.getAdjacent(entry.rowIndex, entry.columnIndex).all { it.value > entry.value }
+            input.getCardinallyAdjacent(entry.coordinate)
+                .all { it.value > entry.value }
         }
     }
 }

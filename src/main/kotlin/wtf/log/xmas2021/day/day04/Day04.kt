@@ -2,6 +2,8 @@ package wtf.log.xmas2021.day.day04
 
 import wtf.log.xmas2021.Day
 import wtf.log.xmas2021.util.collect.Grid
+import wtf.log.xmas2021.util.collect.mapCells
+import wtf.log.xmas2021.util.collect.toGrid
 import java.io.BufferedReader
 
 object Day04 : Day<Day04.Input, Int, Int> {
@@ -60,10 +62,12 @@ object Day04 : Day<Day04.Input, Int, Int> {
                     .readLines()
                     .chunked(Card.SIZE + 1)
                     .map { chunk ->
-                        val rows = chunk.take(Card.SIZE).map { line ->
-                            line.trim().split(Regex("\\s+")).map { it.toInt() }
-                        }
-                        Grid(rows)
+                        chunk
+                            .take(Card.SIZE)
+                            .map { line ->
+                                line.trim().split(Regex("\\s+")).map { it.toInt() }
+                            }
+                            .toGrid()
                     }
                     .toList()
                 return Input(drawnValues, hands)
@@ -76,7 +80,7 @@ class Card(
     val hand: Grid<Int>,
 ) {
 
-    private val cells = hand.map { Cell(it) }
+    private val cells = hand.mapCells { Cell(it) }
 
     /**
      * Marks the value on this card and returns true iff this was a winning call.

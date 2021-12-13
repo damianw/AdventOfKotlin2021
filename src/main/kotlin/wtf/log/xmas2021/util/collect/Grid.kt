@@ -1,34 +1,41 @@
 package wtf.log.xmas2021.util.collect
 
-data class Grid<T>(
-    val rows: List<List<T>>,
-) : Iterable<Grid.Entry<T>> {
+interface Grid<T> : Iterable<Grid.Entry<T>> {
 
-    init {
-        require(rows.isNotEmpty())
-    }
+    val rows: List<List<T>>
+    val columns: List<List<T>>
 
-    val height: Int = rows.size
-    val width: Int = rows.first().size
-    val columns: List<List<T>> = (0 until width).map { ColumnView(it) }
-    val values: Sequence<T> = rows.asSequence().flatMap { it.asSequence() }
-    val entries: Sequence<Entry<T>> = sequence {
-        for (rowIndex in 0 until height) {
-            for (columnIndex in 0 until width) {
-                yield(Entry(rowIndex, columnIndex, get(rowIndex, columnIndex)))
+    val height: Int
+    val width: Int
+
+    val values: Sequence<T>
+    val entries: Sequence<Entry<T>>
+
+    val size: Int
+        get() = width * height
+
+    operator fun get(rowIndex: Int, columnIndex: Int): T = rows[rowIndex][columnIndex]
+
+    operator fun get(coordinate: Coordinate): T = get(coordinate.rowIndex, coordinate.columnIndex)
+
+    override fun iterator(): Iterator<Entry<T>> = entries.iterator()
+
+    fun getAllAdjacent(rowIndex: Int, columnIndex: Int): Sequence<Entry<T>> = sequence {
+        for (r in (rowIndex - 1).coerceAtLeast(0)..(rowIndex + 1).coerceAtMost(height - 1)) {
+            for (c in (columnIndex - 1).coerceAtLeast(0)..(columnIndex + 1).coerceAtMost(width - 1)) {
+                if (r != rowIndex || c != columnIndex) {
+                    yield(Entry(r, c, get(r, c)))
+                }
             }
         }
     }
 
-    init {
-        require(rows.all { it.size == width })
-    }
+    fun getAllAdjacent(coordinate: Coordinate): Sequence<Entry<T>> = getAllAdjacent(
+        rowIndex = coordinate.rowIndex,
+        columnIndex = coordinate.columnIndex,
+    )
 
-    operator fun get(rowIndex: Int, columnIndex: Int): T = rows[rowIndex][columnIndex]
-
-    override fun iterator(): Iterator<Entry<T>> = entries.iterator()
-
-    fun getAdjacent(rowIndex: Int, columnIndex: Int): Sequence<Entry<T>> = sequence {
+    fun getCardinallyAdjacent(rowIndex: Int, columnIndex: Int): Sequence<Entry<T>> = sequence {
         val lowerRow = rowIndex - 1
         if (lowerRow >= 0) {
             yield(Entry(lowerRow, columnIndex, get(lowerRow, columnIndex)))
@@ -48,9 +55,62 @@ data class Grid<T>(
         }
     }
 
-    inline fun <R> map(transform: (T) -> R): Grid<R> = Grid(rows.map { row ->
-        row.map(transform)
-    })
+    fun getCardinallyAdjacent(coordinate: Coordinate): Sequence<Entry<T>> = getCardinallyAdjacent(
+        rowIndex = coordinate.rowIndex,
+        columnIndex = coordinate.columnIndex,
+    )
+
+    data class Coordinate(
+        val rowIndex: Int,
+        val columnIndex: Int,
+    )
+
+    data class Entry<T>(
+        val coordinate: Coordinate,
+        val value: T,
+    ) {
+
+        constructor(rowIndex: Int, columnIndex: Int, value: T)
+                : this(Coordinate(rowIndex, columnIndex), value)
+    }
+}
+
+interface MutableGrid<T> : Grid<T> {
+
+    operator fun set(rowIndex: Int, columnIndex: Int, value: T)
+
+    operator fun set(coordinate: Grid.Coordinate, value: T) {
+        set(coordinate.rowIndex, coordinate.columnIndex, value)
+    }
+}
+
+internal data class RealGrid<T>(
+    override val rows: List<MutableList<T>>,
+) : MutableGrid<T> {
+
+    init {
+        require(rows.isNotEmpty())
+    }
+
+    override val height: Int = rows.size
+    override val width: Int = rows.first().size
+    override val columns: List<List<T>> = (0 until width).map { ColumnView(it) }
+    override val values: Sequence<T> = rows.asSequence().flatMap { it.asSequence() }
+    override val entries: Sequence<Grid.Entry<T>> = sequence {
+        for (rowIndex in 0 until height) {
+            for (columnIndex in 0 until width) {
+                yield(Grid.Entry(rowIndex, columnIndex, get(rowIndex, columnIndex)))
+            }
+        }
+    }
+
+    init {
+        require(rows.all { it.size == width })
+    }
+
+    override fun set(rowIndex: Int, columnIndex: Int, value: T) {
+        rows[rowIndex][columnIndex] = value
+    }
 
     override fun toString(): String = buildString {
         append("\n┌")
@@ -73,12 +133,6 @@ data class Grid<T>(
         append("┘\n")
     }
 
-    data class Entry<T>(
-        val rowIndex: Int,
-        val columnIndex: Int,
-        val value: T,
-    )
-
     private inner class ColumnView(private val columnIndex: Int) : AbstractList<T>() {
 
         override val size: Int
@@ -87,3 +141,15 @@ data class Grid<T>(
         override fun get(index: Int): T = rows[index][columnIndex]
     }
 }
+
+fun <T> List<List<T>>.toGrid(): Grid<T> = RealGrid(map { it.toMutableList() })
+
+fun <T> List<List<T>>.toMutableGrid(): MutableGrid<T> = RealGrid(map { it.toMutableList() })
+
+fun <T> Grid<T>.toMutableGrid(): MutableGrid<T> = rows.toMutableGrid()
+
+inline fun <T, R> Grid<T>.mapCells(transform: (T) -> R): Grid<R> = rows
+    .map { row ->
+        row.map(transform)
+    }
+    .toGrid()
