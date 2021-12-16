@@ -1,6 +1,7 @@
 package wtf.log.xmas2021.day.day03
 
 import wtf.log.xmas2021.Day
+import wtf.log.xmas2021.util.math.toInt
 import java.io.BufferedReader
 
 object Day03 : Day<BitTable, Int, Int> {
@@ -107,20 +108,4 @@ private fun List<Boolean>.findMostCommon(): Boolean {
     val count = count { it }
     val half = size / 2
     return size % 2 == 0 && count == half || count > half
-}
-
-private fun List<Boolean>.toInt(): Int {
-    require(size <= 32) {
-        "Too large for an Int: $size"
-    }
-    var result = 0
-    for (bit in this) {
-        result = (result shl 1) or bit.toInt()
-    }
-    return result
-}
-
-private fun Boolean.toInt(): Int = when (this) {
-    true -> 1
-    else -> 0
 }
