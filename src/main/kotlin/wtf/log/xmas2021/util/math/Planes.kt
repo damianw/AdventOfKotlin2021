@@ -2,7 +2,15 @@ package wtf.log.xmas2021.util.math
 
 import org.apache.commons.math3.fraction.Fraction
 
-data class Point(val x: Int = 0, val y: Int = 0)
+data class Point(val x: Int = 0, val y: Int = 0) {
+
+    operator fun plus(augend: Point) = Point(x = x + augend.x, y = y + augend.y)
+}
+
+data class Rect(val x: IntRange, val y: IntRange) {
+
+    operator fun contains(point: Point): Boolean = point.x in x && point.y in y
+}
 
 data class Line(val start: Point, val end: Point) {
 
